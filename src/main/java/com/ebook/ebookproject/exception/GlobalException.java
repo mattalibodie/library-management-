@@ -1,7 +1,6 @@
 package com.ebook.ebookproject.exception;
 
 import com.ebook.ebookproject.model.ApiResponse;
-import com.ebook.ebookproject.model.UserDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
