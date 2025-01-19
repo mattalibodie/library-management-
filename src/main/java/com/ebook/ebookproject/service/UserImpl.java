@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserImpl implements UserService {
@@ -60,12 +59,6 @@ public class UserImpl implements UserService {
             userDTOs.add(userDTO);
         }
         return userDTOs;
-    }
-
-    @Override
-    public UserDTO findById(Long id) {
-        Optional<User> user = userRepository.findById(id);
-        return modelMapper.map(user, UserDTO.class);
     }
 
 }
