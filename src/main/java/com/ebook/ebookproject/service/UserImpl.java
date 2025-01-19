@@ -6,7 +6,7 @@ import com.ebook.ebookproject.exception.ErrorCode;
 import com.ebook.ebookproject.model.UserDTO;
 import com.ebook.ebookproject.repository.UserRepository;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,10 +17,13 @@ import java.util.List;
 @Service
 public class UserImpl implements UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     private final ModelMapper modelMapper = new ModelMapper();
+
+    public UserImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Override
     public void deleteById(Long id) {
