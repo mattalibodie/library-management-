@@ -20,7 +20,7 @@ public class UserImpl implements UserService {
     @Autowired
     private UserRepository userRepository;
 
-    private ModelMapper modelMapper = new ModelMapper();
+    private final ModelMapper modelMapper = new ModelMapper();
 
     @Override
     public void deleteById(Long id) {
