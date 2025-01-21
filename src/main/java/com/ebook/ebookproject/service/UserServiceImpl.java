@@ -20,8 +20,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 
+import java.lang.reflect.Type;
 import java.util.*;
-import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -33,6 +33,9 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final ModelMapper modelMapper = new ModelMapper();
 
+    private final TypeMap<UserDTO, User> userToDtoMapper;
+    private final TypeMap<User, UserDTO> userDTOUserTypeMap;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public void deleteById(Long id) {
@@ -40,17 +43,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User create(UserDTO userDTO) {
+    public UserDTO create(UserDTO userDTO) {
 
         if(userRepository.existsUserByUsername(userDTO.getUsername())) {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
 
-
-        TypeMap<UserDTO, User> userMapper = this.modelMapper.createTypeMap(UserDTO.class, User.class);
-        userMapper.addMappings(mapper -> mapper.skip(User::setRoles));
-
-        User user = userMapper.map(userDTO);
+        User user = userToDtoMapper.map(userDTO);
 
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
@@ -59,12 +58,16 @@ public class UserServiceImpl implements UserService {
         roleRepository.findById("USER").ifPresent(roles::add);
         user.setRoles(roles);
         userRepository.save(user);
-        return user;
+        return modelMapper.map(user, UserDTO.class);
     }
 
     @Override
-    public void update(UserDTO userDTO) {
-        modelMapper.map(userDTO, User.class);
+    public UserDTO update(UserDTO userDTO) {
+        User user = userRepository.findById(userDTO.getId()).orElseThrow(() -> new AppException(ErrorCode.USER_NOTFOUND));
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        var roles = roleRepository.findAllById(userDTO.getRoles());
+        user.setRoles(new HashSet<>(roles));
+        return userDTOUserTypeMap.map(userRepository.save(user));
     }
 
     @Override
@@ -73,15 +76,15 @@ public class UserServiceImpl implements UserService {
         modelMapper.map(users, UserDTO.class);
         List<UserDTO> userDTOs = new ArrayList<>();
         for (User user : users) {
-            UserDTO userDTO = new UserDTO();
-            userDTO.setId(user.getId());
-            userDTO.setUsername(user.getUsername());
-            userDTO.setBirthday(user.getBirthday());
-            userDTO.setEmail(user.getEmail());
-            HashSet<Roles> roles = new HashSet<>(user.getRoles());
-            userDTO.setRoles(roles.stream().map(Roles::getName).collect(Collectors.toList()));
+            UserDTO userDTO = userDTOUserTypeMap.map(user);
             userDTOs.add(userDTO);
         }
         return userDTOs;
+    }
+    @Override
+    public UserDTO findById(Long id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOTFOUND));
+
+        return userDTOUserTypeMap.map(user);
     }
 }

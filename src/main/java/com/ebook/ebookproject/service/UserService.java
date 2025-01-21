@@ -9,9 +9,9 @@ import java.util.List;
 public interface UserService {
 
     void deleteById(Long id);
-    User create(UserDTO userDTO);
-    void update(UserDTO userDTO);
+    UserDTO create(UserDTO userDTO);
+    UserDTO update(UserDTO userDTO);
     List<UserDTO> findAll();
-
+    UserDTO findById(Long id);
 }
 
