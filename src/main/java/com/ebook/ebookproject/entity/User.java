@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.util.List;
+
 import java.util.Set;
 
 
@@ -26,7 +26,7 @@ public class User {
     private String email;
     private LocalDate birthday;
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @ManyToMany
     @JsonManagedReference
     private Set<Roles> roles;
 }
