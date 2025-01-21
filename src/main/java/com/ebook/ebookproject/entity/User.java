@@ -1,9 +1,13 @@
 package com.ebook.ebookproject.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Set;
+
 
 
 @Getter
@@ -21,4 +25,8 @@ public class User {
     private String password;
     private String email;
     private LocalDate birthday;
+
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JsonManagedReference
+    private Set<Roles> roles;
 }

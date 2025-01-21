@@ -1,16 +1,21 @@
 package com.ebook.ebookproject.controller;
 
 
-import com.ebook.ebookproject.exception.ErrorCode;
+
 import com.ebook.ebookproject.model.ApiResponse;
 import com.ebook.ebookproject.model.UserDTO;
 import com.ebook.ebookproject.service.UserService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Slf4j
 @RestController
 @RequestMapping("/users")
 public class userController {

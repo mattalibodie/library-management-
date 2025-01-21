@@ -1,10 +1,11 @@
 package com.ebook.ebookproject.service;
 
 
+import com.ebook.ebookproject.entity.Roles;
+import com.ebook.ebookproject.entity.User;
 import com.ebook.ebookproject.exception.AppException;
 import com.ebook.ebookproject.exception.ErrorCode;
 import com.ebook.ebookproject.model.Authentication;
-import com.ebook.ebookproject.model.ValidateToken;
 import com.ebook.ebookproject.repository.UserRepository;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
@@ -14,18 +15,24 @@ import com.nimbusds.jwt.SignedJWT;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import lombok.experimental.NonFinal;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.text.ParseException;
 import java.time.Instant;
-import java.time.LocalTime;
+
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -33,8 +40,10 @@ public class AuthenticationService {
 
     UserRepository userRepository;
 
-    @NonFinal
-    protected static final String signerKey = "7uIwNEXDLlI9ZiXchmaeFcIVXyx2LEQSvRGq128nCC3ESk39JWYPEgQcZ7PsCV6G";
+    @Value("${signer_key}")
+    private String signerKey = System.getProperty("signer_key");
+
+
 
     public Authentication authenticate(Authentication authentication) {
         var user = userRepository.findUserByUsername((authentication.getUsername())
@@ -47,7 +56,7 @@ public class AuthenticationService {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
 
-        var token = generateToken(authentication.getUsername());
+        var token = generateToken(user.get());
 
         return Authentication.builder()
                 .token(token)
@@ -55,14 +64,15 @@ public class AuthenticationService {
     }
 
 
-    private String generateToken(String username) {
+    private String generateToken(User user) {
         JWSHeader jwsHeader = new JWSHeader(JWSAlgorithm.HS512);
+        log.info("User: {}", user.getRoles().toString());
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                .subject(username)
+                .subject(user.getUsername())
                 .issuer("luongb2110945@student.ctu.edu.vn")
                 .issueTime(new Date())
                 .expirationTime(new Date(Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()))
-                .claim("description", "description")
+                .claim("scope",createScope(user))
                 .build();
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
         JWSObject jwsObject = new JWSObject(jwsHeader, payload);
@@ -87,6 +97,11 @@ public class AuthenticationService {
             throw new RuntimeException(e);
         }
     }
-
-
+    private String createScope(User user){
+        String role = "";
+        if(!CollectionUtils.isEmpty(user.getRoles())){
+            role  = user.getRoles().stream().map(Roles::getName).collect(Collectors.joining(" "));
+        }
+        return role;
+    }
 }
