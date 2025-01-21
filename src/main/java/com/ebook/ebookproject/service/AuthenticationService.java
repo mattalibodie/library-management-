@@ -49,7 +49,9 @@ public class AuthenticationService {
                 .describeConstable()
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOTFOUND)));
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
-
+        if(user.isEmpty()){
+            throw new AppException(ErrorCode.USER_NOTFOUND);
+        }
         boolean isAuthenticated = passwordEncoder.matches(authentication.getPassword(), user.get().getPassword());
         if(!isAuthenticated) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
