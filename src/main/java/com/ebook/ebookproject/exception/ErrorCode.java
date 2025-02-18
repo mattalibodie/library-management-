@@ -22,8 +22,8 @@ public enum ErrorCode {
     UNAUTHORIZED(4015, "Không có quyền truy cập" ),
     OVERDUE(4016,"Đã hết hạn mượn sách" ),
     UPLOAD_FAILED(4017, "Không thể upload file");
-    private int code;
-    private String message;
+    private final int code;
+    private final String message;
 
     ErrorCode(int code, String message) {
         this.code = code;

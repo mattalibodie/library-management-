@@ -1,8 +1,5 @@
 package com.ebook.ebookproject.controller;
 
-
-
-import com.ebook.ebookproject.entity.User;
 import com.ebook.ebookproject.exception.AppException;
 import com.ebook.ebookproject.exception.ErrorCode;
 import com.ebook.ebookproject.model.ApiResponse;
@@ -10,7 +7,6 @@ import com.ebook.ebookproject.model.UserDTO;
 import com.ebook.ebookproject.service.UserService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
