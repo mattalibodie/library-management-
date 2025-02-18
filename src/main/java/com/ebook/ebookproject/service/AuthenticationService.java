@@ -1,20 +1,20 @@
 package com.ebook.ebookproject.service;
 
 
+import com.ebook.ebookproject.entity.InvalidatedToken;
 import com.ebook.ebookproject.entity.Roles;
 import com.ebook.ebookproject.entity.User;
 import com.ebook.ebookproject.exception.AppException;
 import com.ebook.ebookproject.exception.ErrorCode;
 import com.ebook.ebookproject.model.Authentication;
+import com.ebook.ebookproject.repository.InvalidatedRepository;
 import com.ebook.ebookproject.repository.UserRepository;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -28,20 +28,21 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+
 public class AuthenticationService {
 
-    UserRepository userRepository;
+    private final UserRepository userRepository;
 
     @Value("${signer_key}")
     private String signerKey = System.getProperty("signer_key");
-
+    private final InvalidatedRepository invalidatedRepository;
 
 
     public Authentication authenticate(Authentication authentication) {
@@ -73,6 +74,7 @@ public class AuthenticationService {
                 .issuer("luongb2110945@student.ctu.edu.vn")
                 .issueTime(new Date())
                 .expirationTime(new Date(Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()))
+                .jwtID(UUID.randomUUID().toString())
                 .claim("scope",createScope(user))
                 .build();
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
@@ -85,24 +87,53 @@ public class AuthenticationService {
         }
     }
 
-    public boolean ValidateToken(String token){
-        try{
-            JWSVerifier verifier = new MACVerifier(signerKey.getBytes());
-            SignedJWT signedJWT = SignedJWT.parse(token);
-            var isVerify = signedJWT.verify(verifier);
+    private SignedJWT verifyToken(String token) throws JOSEException, ParseException {
 
-            Date expireTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+        JWSVerifier verifier = new MACVerifier(signerKey.getBytes());
 
-            return isVerify && expireTime.after(new Date());
-        } catch (JOSEException | ParseException e) {
-            throw new RuntimeException(e);
-        }
+        SignedJWT signedJWT = SignedJWT.parse(token);
+
+        Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+
+        var verified = signedJWT.verify(verifier);
+
+        if (!(verified && expiryTime.after(new Date())))
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+
+        if (invalidatedRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID()))
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+
+
+        return signedJWT;
     }
+
+
+
     private String createScope(User user){
         String role = "";
         if(!CollectionUtils.isEmpty(user.getRoles())){
             role  = user.getRoles().stream().map(Roles::getName).collect(Collectors.joining(" "));
         }
         return role;
+    }
+
+    public void logout(Authentication request) throws ParseException, JOSEException {
+        var signToken = verifyToken(request.getToken());
+        String jit =  signToken.getJWTClaimsSet().getJWTID();
+        Date ExpiryTime = signToken.getJWTClaimsSet().getExpirationTime();
+        InvalidatedToken invalidatedToken = InvalidatedToken.builder()
+                .id(jit)
+                .expiredTime(ExpiryTime)
+                .build();
+        invalidatedRepository.save(invalidatedToken);
+    }
+    public boolean isValidate(String token) throws ParseException, JOSEException {
+        boolean isValid = true;
+        try {
+            verifyToken(token);
+        } catch (AppException e) {
+            isValid = false;
+        }
+        return isValid;
     }
 }

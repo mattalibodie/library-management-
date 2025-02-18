@@ -1,6 +1,7 @@
 package com.ebook.ebookproject.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -8,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -17,8 +19,6 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-
-
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserDTO {
     private Long id;
@@ -29,6 +29,7 @@ public class UserDTO {
     private String password;
     private String email;
     private LocalDate birthday;
+    @Column(precision = 15, scale = 2, columnDefinition = "DECIMAL(15,2) DEFAULT 0.00")
+    private BigDecimal balance;
     private List<String> roles;
-
 }

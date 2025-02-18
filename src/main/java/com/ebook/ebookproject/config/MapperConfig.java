@@ -1,5 +1,4 @@
 package com.ebook.ebookproject.config;
-
 import com.ebook.ebookproject.entity.Roles;
 import com.ebook.ebookproject.entity.User;
 import com.ebook.ebookproject.model.UserDTO;
@@ -7,9 +6,7 @@ import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeMap;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.stream.Collectors;
 
 @Configuration

@@ -3,11 +3,15 @@ package com.ebook.ebookproject.controller;
 
 import com.ebook.ebookproject.model.ApiResponse;
 import com.ebook.ebookproject.model.Authentication;
+import com.ebook.ebookproject.model.ValidateToken;
 import com.ebook.ebookproject.service.AuthenticationService;
+import com.nimbusds.jose.JOSEException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.*;
+
+import java.text.ParseException;
 
 @RestController
 @RequestMapping("/auth")
@@ -30,12 +34,18 @@ public class authenticationController {
     }
 
     @PostMapping("/token/verify")
-    ApiResponse<Authentication> authVerify(@RequestBody Authentication request) {
-        var result = authenticationService.ValidateToken(request.getToken());
+    ApiResponse<Authentication> authVerify(@RequestBody ValidateToken request) throws ParseException, JOSEException {
+        var result = authenticationService.isValidate(request.getToken());
         return ApiResponse.<Authentication>builder()
                 .result(Authentication.builder()
                         .authenticated(result)
                         .build())
+                .build();
+    }
+    @PostMapping("/logout")
+    ApiResponse<Void> authLogout(@RequestBody Authentication request) throws ParseException, JOSEException {
+        authenticationService.logout(request);
+        return ApiResponse.<Void>builder()
                 .build();
     }
 }

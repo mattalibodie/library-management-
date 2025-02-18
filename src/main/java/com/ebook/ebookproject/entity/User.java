@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import java.util.Set;
@@ -25,7 +26,8 @@ public class User {
     private String password;
     private String email;
     private LocalDate birthday;
-
+    @Column(precision = 15, scale = 2, columnDefinition = "DECIMAL(15,2) DEFAULT 0.00")
+    private BigDecimal balance;
     @ManyToMany
     @JsonManagedReference
     private Set<Roles> roles;
