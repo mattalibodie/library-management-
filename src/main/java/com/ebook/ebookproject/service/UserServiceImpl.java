@@ -10,6 +10,7 @@ import com.ebook.ebookproject.exception.ErrorCode;
 import com.ebook.ebookproject.model.UserDTO;
 import com.ebook.ebookproject.repository.RoleRepository;
 import com.ebook.ebookproject.repository.UserRepository;
+import com.ebook.ebookproject.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,6 +20,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 
@@ -26,14 +28,21 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
-
+    private final TypeMap<UserDTO, User> userToDtoMapper;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final ModelMapper modelMapper = new ModelMapper();
-
-    private final TypeMap<UserDTO, User> userToDtoMapper;
     private final TypeMap<User, UserDTO> userDTOUserTypeMap;
     private final PasswordEncoder passwordEncoder;
+    private final TypeMap<User, UserDTO> userToUserDTOMapper;
+
+    @Override
+    public void updateBalance(Long id, BigDecimal balance) {
+        User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOTFOUND));
+        user.setBalance(balance);
+        userRepository.save(user);
+    }
+
 
     @Override
     public void deleteById(Long id) {
@@ -60,11 +69,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDTO update(UserDTO userDTO) {
-        User user = userRepository.findById(userDTO.getId()).orElseThrow(() -> new AppException(ErrorCode.USER_NOTFOUND));
+    public UserDTO update(Long id, UserDTO userDTO) {
+        User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOTFOUND));
+        modelMapper.map(userDTO, user);
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-        var roles = roleRepository.findAllById(userDTO.getRoles());
-        user.setRoles(new HashSet<>(roles));
+        if(userDTO.getRoles() != null) {
+            var roles = roleRepository.findAllById(userDTO.getRoles());
+            user.setRoles(new HashSet<>(roles));
+        }
         return userDTOUserTypeMap.map(userRepository.save(user));
     }
 
@@ -84,5 +96,18 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOTFOUND));
 
         return userDTOUserTypeMap.map(user);
+    }
+
+    @Override
+    public String getRoleByUserId(Long id){
+        User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOTFOUND));
+        return user.getRoles().toString();
+    }
+
+    @Override
+    public UserDTO getCurrentUser() {
+        String username = SecurityUtils.getCurrentUsername();
+        User user = userRepository.findUserByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOTFOUND));
+        return userToUserDTOMapper.map(user);
     }
 }

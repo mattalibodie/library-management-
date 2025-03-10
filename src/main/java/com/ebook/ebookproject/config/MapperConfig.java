@@ -20,10 +20,12 @@ public class MapperConfig {
     public TypeMap<User, UserDTO> userToUserDTOMapper(ModelMapper modelMapper) {
         return modelMapper.createTypeMap(User.class, UserDTO.class)
                 .addMappings(mapper -> {
+                    mapper.skip(User::getPassword, UserDTO::setPassword);
                     mapper.map(User::getId, UserDTO::setId);
                     mapper.map(User::getUsername, UserDTO::setUsername);
                     mapper.map(User::getBirthday, UserDTO::setBirthday);
                     mapper.map(User::getEmail, UserDTO::setEmail);
+                    mapper.map(User::getBalance, UserDTO::setBalance);
                     mapper.using(ctx -> {
                         if (ctx.getSource() == null){
                             return null;

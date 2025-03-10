@@ -1,5 +1,6 @@
 package com.ebook.ebookproject.service;
 
+import com.cloudinary.Cloudinary;
 import com.ebook.ebookproject.entity.Book;
 import com.ebook.ebookproject.entity.Borrow;
 import com.ebook.ebookproject.entity.User;
@@ -12,10 +13,13 @@ import com.ebook.ebookproject.repository.UserRepository;
 import com.ebook.ebookproject.utils.SecurityUtils;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.net.URL;
+import java.net.URLConnection;
 import java.time.LocalDate;
 
 @Service
@@ -26,11 +30,12 @@ public class BorrowService {
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
     private final BookRepository bookRepository;
+    private final BorrowDTO borrowDTO;
+    private final Cloudinary cloudinary;
 
     //    Muon sach
     @Transactional
-    public Borrow borrowBook(Long book_id){
-
+    public BorrowDTO borrowBook(Long book_id){
         String username = SecurityUtils.getCurrentUsername();
         Book book = bookRepository.findById(book_id).orElseThrow(() -> new AppException(ErrorCode.BOOK_NOTFOUND));
         User user = userRepository.findUserByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOTFOUND));
@@ -46,7 +51,8 @@ public class BorrowService {
         borrow.setLoanDate(LocalDate.now());
         borrow.setDueDate(LocalDate.now().plusDays(7));
         borrow.setPaid(true);
-        return borrowRepository.save(borrow);
+        borrowRepository.save(borrow);
+        return modelMapper.map(borrow, BorrowDTO.class);
     }
 
     public boolean isBorrowedPaid(Long borrow_id){
@@ -76,6 +82,7 @@ public class BorrowService {
             return borrow.getBook().getEpubFileUrl();
         }
         else throw new AppException(ErrorCode.EPUB_PATH_NOTFOUND);
+
     }
 
 }

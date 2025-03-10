@@ -9,9 +9,11 @@ import com.ebook.ebookproject.exception.AppException;
 import com.ebook.ebookproject.exception.ErrorCode;
 import com.ebook.ebookproject.model.BookDTO;
 import com.ebook.ebookproject.model.BookRequest;
+import com.ebook.ebookproject.model.BookResponse;
 import com.ebook.ebookproject.repository.AuthorRepository;
 import com.ebook.ebookproject.repository.BookRepository;
 import com.ebook.ebookproject.repository.GenreRepository;
+import com.ebook.ebookproject.utils.SecurityUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -33,15 +35,18 @@ public class BookService {
     private final AuthorRepository authorRepository;
     private final GenreRepository genreRepository;
 
-    public List<BookDTO> getAllBooks() {
+    public List<BookResponse> getAllBooks() {
+        List<Book> books = bookRepository.findAll();
+        return books.stream().map(book -> modelMapper.map(book, BookResponse.class)).collect(Collectors.toList());
+    }
+    public List<BookDTO> getAllBooksByAdmin() {
         List<Book> books = bookRepository.findAll();
         return books.stream().map(book -> modelMapper.map(book, BookDTO.class)).collect(Collectors.toList());
     }
 
-
-    public BookDTO getBookById(Long id) {
+    public BookResponse getBookById(Long id) {
         Book book = bookRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.BOOK_NOTFOUND));
-        return modelMapper.map(book, BookDTO.class);
+        return modelMapper.map(book, BookResponse.class);
     }
 
     public void createBook(BookRequest book, String authors, String genres) {
@@ -56,7 +61,6 @@ public class BookService {
                 .map(authorName -> authorRepository.findByName(authorName)
                         .orElseThrow(() -> new AppException(ErrorCode.AUTHOR_NOTFOUND))
         ).toList();
-        log.info(genreNameList.toString());
         List<Genre> genre = genreNameList.stream()
                 .map(genreName -> genreRepository.findByName(genreName)
                         .orElseThrow(() -> new AppException(ErrorCode.GENRE_NOTFOUND))
@@ -72,10 +76,8 @@ public class BookService {
         newBook.setAuthors(author);
         newBook.setGenres(genre);
         String epubUrl;
-
-
         try {
-            Map uploadResult = cloudinary.uploader().upload(book.getEpubFileUrl().getBytes(), ObjectUtils.asMap("resource_type", "raw"));
+            Map uploadResult = cloudinary.uploader().upload(book.getEpubFileUrl().getBytes(), ObjectUtils.asMap("resource_type", "raw", "format", "epub"));
             epubUrl = (String) uploadResult.get("secure_url");
         } catch (IOException e) {
             throw new AppException(ErrorCode.UPLOAD_FAILED);
@@ -98,10 +100,26 @@ public class BookService {
     public BookDTO updateBook(BookDTO bookDTO) {
         Book book = bookRepository.findById(bookDTO.getId()).orElseThrow(() -> new AppException(ErrorCode.BOOK_NOTFOUND));
         modelMapper.map(bookDTO, book);
+        bookRepository.save(book);
         return modelMapper.map(book, BookDTO.class);
     }
 
-    public void deleteBook(Long id) {
+    public BookDTO updateRentalFee(BookDTO bookDTO) {
+        Book book = bookRepository.findById(bookDTO.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.BOOK_NOTFOUND));
+        book.setRentalPrice(bookDTO.getRentalPrice());
+        bookRepository.save(book);
+        return modelMapper.map(book, BookDTO.class);
+    }
+
+    public void deleteBook(Long id){
+        Book book = bookRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.BOOK_NOTFOUND));
         bookRepository.deleteById(id);
+        try{
+            cloudinary.uploader().destroy(book.getEpubFileUrl(), ObjectUtils.emptyMap());
+            cloudinary.uploader().destroy(book.getCoverImageUrl(), ObjectUtils.emptyMap());
+        }catch (IOException e){
+            throw new AppException(ErrorCode.UPLOAD_FAILED);
+        }
     }
 }

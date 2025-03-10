@@ -46,6 +46,16 @@ public class authenticationController {
     ApiResponse<Void> authLogout(@RequestBody Authentication request) throws ParseException, JOSEException {
         authenticationService.logout(request);
         return ApiResponse.<Void>builder()
+                .code(200)
+                .build();
+    }
+
+    @PostMapping("/refresh")
+    ApiResponse<Object> refreshToken(@RequestBody Authentication request) throws ParseException, JOSEException {
+        var result = authenticationService.refreshToken(request);
+        return ApiResponse.builder()
+                .code(200)
+                .result(result)
                 .build();
     }
 }

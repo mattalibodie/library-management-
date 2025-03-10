@@ -23,6 +23,7 @@ public class Book {
     private String isbn;
     private int pages;
     private LocalDate publicationDate;
+    @Column(length = 1000)
     private String description;
     private String coverImageUrl;
     private String epubFileUrl;

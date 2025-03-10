@@ -36,10 +36,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(authorizeRequests
-                        -> authorizeRequests.requestMatchers(HttpMethod.POST, "auth/login").permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS,"/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "auth/token/", "/auth/token/verify", "/users/adduser", "auth/logout").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/users/showlist").hasAuthority("SCOPE_ADMIN").anyRequest().authenticated())
+                        -> authorizeRequests
+                        .requestMatchers(HttpMethod.GET, "/library/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/user/showlist").hasAuthority("SCOPE_ADMIN").anyRequest().authenticated()
+                )
                 .cors(httpSecurityCorsConfigurer -> httpSecurityCorsConfigurer.configurationSource(corsFilter()))
         .csrf(AbstractHttpConfigurer::disable)
 

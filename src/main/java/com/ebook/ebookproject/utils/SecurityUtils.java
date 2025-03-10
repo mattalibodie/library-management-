@@ -22,4 +22,15 @@ public class SecurityUtils {
 
         throw new AppException(ErrorCode.UNAUTHENTICATED);
     }
+    public static String getUserRole(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof Jwt) {
+            return ((Jwt) principal).getClaim("SCOPE");
+        }
+        throw new AppException(ErrorCode.UNAUTHENTICATED);
+    }
 }
